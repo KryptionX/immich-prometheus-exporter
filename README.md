@@ -77,7 +77,7 @@ scrape_configs:
 ## CI/CD
 
 - GitHub Actions builds multi-arch images on push to `main`
-- Images pushed to GHCR: `ghcr.io/johnny/immich-prometheus-exporter:latest`
+- Images pushed to GHCR: `ghcr.io/kryptionx/immich-prometheus-exporter:latest`
 - Release workflow builds versioned tags on git tag (vX.Y.Z)
 
 ## License
