@@ -99,11 +99,11 @@ class ImmichClient:
     
     def get_server_version(self) -> Dict[str, Any]:
         """Get server version information"""
-        return self._request('GET', '/api/server-info/version')
+        return self._request('GET', '/api/server/version')
     
     def get_server_statistics(self) -> Dict[str, Any]:
         """Get server statistics"""
-        return self._request('GET', '/api/server-info/statistics')
+        return self._request('GET', '/api/server/statistics')
     
     def get_users(self) -> List[Dict[str, Any]]:
         """Get list of all users"""
