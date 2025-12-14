@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  immich-exporter:
+    build: .
+    image: immich-exporter:dev
+    environment:
+      - IMMICH_URL=${IMMICH_URL:-http://localhost:2283}
+      - IMMICH_API_KEY=${IMMICH_API_KEY:-changeme}
+      - EXPORTER_PORT=9700
+      - SCRAPE_INTERVAL=60
+    ports:
+      - "9700:9700"
+    restart: unless-stopped

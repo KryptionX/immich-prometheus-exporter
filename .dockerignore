@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+*.md
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+cache
+*.log
+.env
+.env*
+.DS_Store

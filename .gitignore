@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.venv/
+venv/
+.envrc
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# Docker
+*.log
+*.pid
+*.seed
+*~
+
+# VSCode / Editors
+.vscode/
+.idea/
+.DS_Store
+
+# Build
+build/
+dist/
+*.egg-info/
