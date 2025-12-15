@@ -109,10 +109,6 @@ class ImmichClient:
         """Get list of all users"""
         return self._request('GET', '/api/users')
     
-    def get_user_statistics(self, user_id: str) -> Dict[str, Any]:
-        """Get statistics for a specific user"""
-        return self._request('GET', f'/api/users/{user_id}/statistics')
-    
     def get_albums(self) -> List[Dict[str, Any]]:
         """Get list of all albums"""
         return self._request('GET', '/api/albums')
@@ -140,12 +136,13 @@ def collect_metrics(client: ImmichClient):
         
         # Server statistics
         logger.info("Collecting server statistics...")
+        server_stats = {}
         try:
-            stats = client.get_server_statistics()
-            immich_server_photos_total.set(stats.get('photos', 0))
-            immich_server_videos_total.set(stats.get('videos', 0))
-            immich_server_usage_bytes.set(stats.get('usage', 0))
-            immich_server_users_total.set(stats.get('usageByUser', [{}]).__len__())
+            server_stats = client.get_server_statistics()
+            immich_server_photos_total.set(server_stats.get('photos', 0))
+            immich_server_videos_total.set(server_stats.get('videos', 0))
+            immich_server_usage_bytes.set(server_stats.get('usage', 0))
+            immich_server_users_total.set(len(server_stats.get('usageByUser', [])))
         except Exception as e:
             logger.warning(f"Failed to get server statistics: {e}")
             immich_scrape_errors_total.inc()
@@ -156,33 +153,46 @@ def collect_metrics(client: ImmichClient):
             users = client.get_users()
             logger.info(f"Found {len(users)} users")
             
+            # Build user lookup map for matching with server stats
+            user_map = {user.get('id'): user for user in users}
+            
+            # Extract per-user statistics from server statistics (usageByUser)
+            usage_by_user = server_stats.get('usageByUser', [])
+            for user_usage in usage_by_user:
+                user_id = user_usage.get('userId')
+                if not user_id or user_id not in user_map:
+                    continue
+                
+                user = user_map[user_id]
+                user_name = user.get('name', user.get('email', 'unknown'))
+                
+                # Extract metrics from usageByUser structure
+                images = user_usage.get('photos', 0)
+                videos = user_usage.get('videos', 0)
+                total_assets = images + videos
+                usage = user_usage.get('usage', 0)
+                quota = user.get('quotaSizeInBytes', 0)  # Quota from user object
+                
+                # Set metrics
+                immich_user_total_assets.labels(user_id=user_id, user_name=user_name).set(total_assets)
+                immich_user_images_count.labels(user_id=user_id, user_name=user_name).set(images)
+                immich_user_videos_count.labels(user_id=user_id, user_name=user_name).set(videos)
+                immich_user_quota_bytes.labels(user_id=user_id, user_name=user_name).set(quota)
+                immich_user_quota_usage_bytes.labels(user_id=user_id, user_name=user_name).set(usage)
+                
+                logger.debug(f"User {user_name}: {images} images, {videos} videos, {usage} bytes used")
+            
+            # Set metrics to 0 for users not in usageByUser (if any)
             for user in users:
                 user_id = user.get('id')
                 user_name = user.get('name', user.get('email', 'unknown'))
-                
-                try:
-                    # Get user statistics
-                    user_stats = client.get_user_statistics(user_id)
-                    
-                    # Extract metrics
-                    images = user_stats.get('images', 0)
-                    videos = user_stats.get('videos', 0)
-                    total_assets = images + videos
-                    usage = user_stats.get('usage', 0)
-                    quota = user_stats.get('quota', 0)
-                    
-                    # Set metrics
-                    immich_user_total_assets.labels(user_id=user_id, user_name=user_name).set(total_assets)
-                    immich_user_images_count.labels(user_id=user_id, user_name=user_name).set(images)
-                    immich_user_videos_count.labels(user_id=user_id, user_name=user_name).set(videos)
-                    immich_user_quota_bytes.labels(user_id=user_id, user_name=user_name).set(quota)
-                    immich_user_quota_usage_bytes.labels(user_id=user_id, user_name=user_name).set(usage)
-                    
-                    logger.debug(f"User {user_name}: {images} images, {videos} videos, {usage} bytes used")
-                    
-                except Exception as e:
-                    logger.warning(f"Failed to get statistics for user {user_name}: {e}")
-                    immich_scrape_errors_total.inc()
+                if user_id not in [u.get('userId') for u in usage_by_user]:
+                    # User exists but has no assets yet
+                    immich_user_total_assets.labels(user_id=user_id, user_name=user_name).set(0)
+                    immich_user_images_count.labels(user_id=user_id, user_name=user_name).set(0)
+                    immich_user_videos_count.labels(user_id=user_id, user_name=user_name).set(0)
+                    immich_user_quota_bytes.labels(user_id=user_id, user_name=user_name).set(user.get('quotaSizeInBytes', 0))
+                    immich_user_quota_usage_bytes.labels(user_id=user_id, user_name=user_name).set(0)
         
         except Exception as e:
             logger.error(f"Failed to get users: {e}")
