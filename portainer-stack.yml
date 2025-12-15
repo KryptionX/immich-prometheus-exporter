@@ -12,7 +12,11 @@ services:
     ports:
       - "9700:9700"
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:9700\").read()' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:9700").read()'' || exit 1',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
