@@ -5,14 +5,12 @@ on:
     tags:
       - 'v*.*.*'
 
+env:
+  IMAGE: ghcr.io/kryptionx/immich-prometheus-exporter
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      issues: read
-      pull-requests: read
 
     steps:
       - name: Checkout
@@ -20,19 +18,21 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
 
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: KryptionX
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE }}
           tags: |
             type=ref,event=tag
             type=raw,value=latest
@@ -41,17 +41,18 @@ jobs:
             type=raw,value={{major}}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      # Replaces softprops/action-gh-release (GitHub only). No generate_release_notes on Forgejo.
+      - name: Create Forgejo release
+        uses: actions/forgejo-release@v2
         with:
-          generate_release_notes: true
+          direction: upload
+          skip-assets: true
+          release-notes: "Container image: ${{ env.IMAGE }}:${{ github.ref_name }}"
