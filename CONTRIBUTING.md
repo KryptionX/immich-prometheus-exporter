@@ -24,4 +24,4 @@ python -m pytest
 ## Release
 
 - Tag with `vX.Y.Z`
-- GitHub Actions will build and push images to GHCR
+- Forgejo Actions will build and push images to GHCR

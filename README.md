@@ -76,7 +76,7 @@ scrape_configs:
 
 ## CI/CD
 
-- GitHub Actions builds multi-arch images on push to `main`
+- Forgejo Actions (`.forgejo/workflows/`, runner `ci-runner`) builds `linux/amd64` images on push to `main`; the repo is hosted on Forgejo and push-mirrored to GitHub
 - Images pushed to GHCR: `ghcr.io/kryptionx/immich-prometheus-exporter:latest`
 - Release workflow builds versioned tags on git tag (vX.Y.Z)
 
