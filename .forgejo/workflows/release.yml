@@ -36,9 +36,9 @@ jobs:
           tags: |
             type=ref,event=tag
             type=raw,value=latest
-            type=raw,value={{version}}
-            type=raw,value={{major}}.{{minor}}
-            type=raw,value={{major}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
