@@ -76,9 +76,9 @@ scrape_configs:
 
 ## CI/CD
 
-- Forgejo Actions (`.forgejo/workflows/`, runner `ci-runner`) builds `linux/amd64` images on push to `main`; the repo is hosted on Forgejo and push-mirrored to GitHub
-- Images pushed to GHCR: `ghcr.io/kryptionx/immich-prometheus-exporter:latest`
-- Release workflow builds versioned tags on git tag (vX.Y.Z)
+- Forgejo Actions (`.forgejo/workflows/build.yml`, runner `ci-runner`) builds `linux/amd64` on every push to `main` and every pull request. It is a build-only source gate and publishes nothing.
+- Images are published to the Forgejo registry by an owner-approved exact-SHA dispatch in the private `johnny/registry-publishers` repo (recipe `immich-prometheus-exporter`; an optional stable `vX.Y.Z` tag at the same `main` commit is passed as `release_tag`). Pushing a tag here no longer builds or publishes an image.
+- The repo is hosted on Forgejo and push-mirrored to GitHub. GHCR is no longer published to; the existing `ghcr.io/kryptionx/immich-prometheus-exporter` tags are frozen legacy copies.
 
 ## License
 
